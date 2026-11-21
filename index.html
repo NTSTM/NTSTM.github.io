@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đoán Đi</title>
+<meta name="description" content="Đoán Đi: trò chơi đoán từ ghép tiếng Việt 2 tiếng, chấm 5 màu, 5 lượt.">
+<style>
+  :root { --bg: #160C2E; --panel: #2A1757; --text: #F6F2FF; --muted: #B9ACE8; --gold: #FFD23F; --teal: #2FD4B8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.6; }
+  main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
+  .tiles { display: flex; gap: 6px; justify-content: center; margin: 8px 0 20px; flex-wrap: wrap; }
+  .tile { width: 44px; height: 54px; border-radius: 6px; display: grid; place-items: center; font-weight: 700; font-size: 26px; color: #fff; }
+  .g { background: #7BC043; } .b { background: #4DA3FF; } .y { background: #FFD23F; color: #3A2800; } .o { background: #FF914D; } .r { background: #FF5A5F; }
+  h1 { text-align: center; color: var(--gold); margin: 0 0 4px; font-size: 32px; }
+  p.lead { text-align: center; color: var(--muted); margin-top: 0; }
+  section { background: var(--panel); border-radius: 12px; padding: 16px 20px; margin-top: 16px; }
+  h2 { color: var(--gold); font-size: 20px; margin: 0 0 8px; }
+  a { color: var(--teal); }
+  ul { padding-left: 20px; margin: 0; }
+  footer { text-align: center; color: var(--muted); font-size: 14px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="tiles" aria-hidden="true">
+    <div class="tile g">Đ</div><div class="tile b">O</div><div class="tile y">Á</div><div class="tile o">N</div>
+    <div class="tile r">Đ</div><div class="tile g">I</div>
+  </div>
+  <h1>Đoán Đi</h1>
+  <p class="lead">Trò chơi đoán từ ghép tiếng Việt 2 tiếng, chấm 5 màu, 5 lượt.</p>
+
+  <section>
+    <h2>Chơi thế nào</h2>
+    <ul>
+      <li>Mỗi màn đoán một từ 2 tiếng trong 5 lượt, mỗi ô là một chữ cái.</li>
+      <li>Ô đổi màu cho biết chữ đúng chỗ, cùng họ chữ, có ở chỗ khác hay không có trong đáp án.</li>
+      <li>31 chủ đề, Từ của ngày, Sổ từ ghi lại những từ bạn đã gặp.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Thông tin</h2>
+    <ul>
+      <li><a href="privacy.html">Chính sách quyền riêng tư</a></li>
+      <li>Dữ liệu từ điển: <a href="https://dict.minhqnd.com">@minhqnd (dict.minhqnd.com)</a>, giấy phép CC BY-SA 4.0</li>
+    </ul>
+  </section>
+
+  <footer>Đoán Đi · làm bởi S98</footer>
+</main>
+</body>
+</html>
