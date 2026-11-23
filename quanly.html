@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Quản lý mã Đoán Đi</title>
+<!-- Trang này không chứa bí mật: khóa ký và mã thật nằm trong két mã hóa (codes.vault.json) chỉ mở được bằng mật khẩu;
+     ghi lên GitHub cần token của chủ repo. Thuật toán băm, ký giống tools/codes/make_codes.py và Core/Economy/Codes.cs. -->
+<style>
+  :root { --bg: #160C2E; --panel: #2A1757; --line: #4A3590; --text: #F6F2FF; --muted: #B9ACE8; --gold: #FFD23F; --teal: #2FD4B8; --red: #FF5A5F; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { color: var(--gold); margin: 0 0 4px; font-size: 26px; }
+  h2 { color: var(--gold); font-size: 18px; margin: 0 0 10px; }
+  p { color: var(--muted); margin: 4px 0 10px; }
+  section { background: var(--panel); border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; align-items: end; }
+  label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; align-items: center; }
+  button { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; font: inherit; cursor: pointer; }
+  button.main { background: var(--teal); color: #08221d; border-color: var(--teal); font-weight: 700; }
+  button.del { color: var(--red); padding: 4px 10px; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 1050px; }
+  th { color: var(--gold); text-align: left; font-weight: 600; padding: 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 4px 6px; border-bottom: 1px solid #ffffff10; vertical-align: middle; }
+  input, select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px; font: inherit; }
+  input[type=checkbox] { width: auto; }
+  input.num { width: 80px; }
+  input.code { text-transform: uppercase; min-width: 120px; }
+  td.dim input, td.dim select { opacity: 0.25; pointer-events: none; }
+  .msg { min-height: 22px; margin-top: 8px; }
+  .msg.ok { color: var(--teal); } .msg.err { color: var(--red); }
+  .hidden { display: none; }
+  .check { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Quản lý gift code và mã giảm giá</h1>
+  <p>Sửa xong bấm <b>Lưu lên GitHub</b>: game dùng mã mới trong khoảng 1 phút. Mã thật được cất trong két mã hóa trên repo, chỉ mở được bằng mật khẩu của bạn.</p>
+
+  <section id="connect">
+    <h2>1. Kết nối</h2>
+    <div class="grid">
+      <div><label for="repo">Repo (chủ/tên)</label><input id="repo" value="NTSTM/NTSTM.github.io"></div>
+      <div><label for="token">Token GitHub</label><input id="token" type="password" autocomplete="off" placeholder="github_pat_..."></div>
+      <div><label for="pass">Mật khẩu két</label><input id="pass" type="password" autocomplete="current-password"></div>
+      <div><button id="btnConnect" class="main">Kết nối</button></div>
+    </div>
+    <div class="bar"><label class="check"><input id="remember" type="checkbox"> Nhớ token trên máy này (không nhớ mật khẩu)</label></div>
+    <div id="msgConnect" class="msg"></div>
+  </section>
+
+  <section id="setup" class="hidden">
+    <h2>Tạo két lần đầu</h2>
+    <p>Repo chưa có két. Dán khóa ký (64 ký tự, trong file <code>tools/codes/secret.txt</code> trên máy làm game) và đặt mật khẩu két
+       (ít nhất 12 ký tự; nên là một câu dài dễ nhớ). Mất mật khẩu thì tạo két mới bằng khóa ký này.</p>
+    <div class="grid">
+      <div><label for="secret">Khóa ký</label><input id="secret" type="password" autocomplete="off"></div>
+      <div><label for="pass2">Nhập lại mật khẩu</label><input id="pass2" type="password" autocomplete="new-password"></div>
+      <div><button id="btnCreate" class="main">Tạo két</button></div>
+    </div>
+    <div id="msgSetup" class="msg"></div>
+  </section>
+
+  <section id="editor" class="hidden">
+    <h2>2. Danh sách mã</h2>
+    <p>Giờ theo giờ Việt Nam, bỏ trống là không giới hạn. Mã chỉ gồm chữ A–Z và số. Sản phẩm bỏ trống là mọi sản phẩm (trừ VIP S giá
+       ưu đãi và ủng hộ); mã sản phẩm: vip, vip_s, vip_s_upgrade, pack_starter, pack_10k, pack_20k, pack_50k, pack_100k.</p>
+    <div class="bar">
+      <button id="addGift">+ Mã quà tặng</button>
+      <button id="addDiscount">+ Mã giảm giá</button>
+      <button id="btnSave" class="main">Lưu lên GitHub</button>
+      <button id="btnReload">Tải lại từ GitHub</button>
+      <button id="btnImport">Nạp file danh sách</button>
+      <button id="btnExport">Tải bản sao danh sách</button>
+      <input id="file" type="file" accept=".json" hidden>
+    </div>
+    <div class="wrap">
+      <table>
+        <thead><tr>
+          <th>Mã</th><th>Loại</th><th>Xu</th><th>Sao</th><th>Theme</th><th>% giảm</th><th>Mã ưu đãi Play</th>
+          <th>Sản phẩm (cách nhau dấu phẩy)</th><th>Bắt đầu</th><th>Kết thúc</th><th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div id="msgEditor" class="msg"></div>
+  </section>
+
+  <section id="password" class="hidden">
+    <h2>Đổi mật khẩu két</h2>
+    <div class="grid">
+      <div><label for="newPass">Mật khẩu mới</label><input id="newPass" type="password" autocomplete="new-password"></div>
+      <div><label for="newPass2">Nhập lại</label><input id="newPass2" type="password" autocomplete="new-password"></div>
+      <div><button id="btnPass">Đổi mật khẩu</button></div>
+    </div>
+    <div id="msgPass" class="msg"></div>
+  </section>
+</main>
+
+<script>
+const SALT = "doandi-code-v1:";
+const ITER = 310000;
+const API = "https://api.github.com/repos/";
+const $ = id => document.getElementById(id);
+const rows = $("rows");
+let state = null;            // { secret, codes, sha: { codes, vault } }
+
+function say(id, text, ok) { const el = $(id); el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); }
+function normalize(code) { return (code || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+const enc = new TextEncoder(), dec = new TextDecoder();
+function hex(buf) { return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join(""); }
+function bytesOfHex(h) { return new Uint8Array(h.match(/../g).map(x => parseInt(x, 16))); }
+function b64(bytes) { let s = ""; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s); }
+function unb64(text) { const s = atob(text.replace(/\s/g, "")); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+
+async function sha256(text) { return hex(await crypto.subtle.digest("SHA-256", enc.encode(text))); }
+async function hmac(secretHex, text) {
+  const key = await crypto.subtle.importKey("raw", bytesOfHex(secretHex), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return hex(await crypto.subtle.sign("HMAC", key, enc.encode(text)));
+}
+async function aesKey(password, salt, iter) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base,
+    { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function encryptVault(plain, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await aesKey(password, salt, ITER), enc.encode(JSON.stringify(plain)));
+  return { v: 1, kdf: "PBKDF2-SHA256", iter: ITER, salt: b64(salt), iv: b64(iv), data: b64(new Uint8Array(data)) };
+}
+async function decryptVault(vault, password) {
+  const key = await aesKey(password, unb64(vault.salt), vault.iter || ITER);
+  const data = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(vault.iv) }, key, unb64(vault.data));
+  return JSON.parse(dec.decode(data));
+}
+
+// ---------- GitHub API (Contents) ----------
+function repo() { return $("repo").value.trim(); }
+function headers() {
+  return { Authorization: "Bearer " + $("token").value.trim(), Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+}
+async function ghGet(path) {
+  const r = await fetch(API + repo() + "/contents/" + path + "?t=" + Date.now(), { headers: headers(), cache: "no-store" });
+  if (r.status === 404) return null;
+  if (r.status === 401) throw "Token sai hoặc đã hết hạn.";
+  if (r.status === 403) throw "Token không có quyền với repo này (cần quyền Contents đọc và ghi).";
+  if (!r.ok) throw "GitHub báo lỗi " + r.status + ".";
+  const j = await r.json();
+  return { text: dec.decode(unb64(j.content)), sha: j.sha };
+}
+async function ghPut(path, text, sha, message) {
+  const body = { message, content: b64(enc.encode(text)) };
+  if (sha) body.sha = sha;
+  const r = await fetch(API + repo() + "/contents/" + path, { method: "PUT", headers: headers(), body: JSON.stringify(body) });
+  if (r.status === 409 || r.status === 422) throw "File trên GitHub vừa bị đổi ở nơi khác. Bấm Tải lại từ GitHub rồi sửa lại.";
+  if (r.status === 401) throw "Token sai hoặc đã hết hạn.";
+  if (r.status === 403 || r.status === 404) throw "Token không có quyền ghi repo này (cần quyền Contents đọc và ghi).";
+  if (!r.ok) throw "GitHub báo lỗi " + r.status + " khi ghi " + path + ".";
+  return (await r.json()).content.sha;
+}
+
+// ---------- bảng mã ----------
+function toInput(t) { return t ? t.replace(" ", "T") : ""; }
+function fromInput(v) { return v ? v.replace("T", " ") : null; }
+function addRow(c) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input class="code" value="${(c.code || "").replace(/"/g, "")}"></td>
+    <td><select><option value="gift">Quà tặng</option><option value="discount">Giảm giá</option></select></td>
+    <td class="g"><input class="num" type="number" min="0" value="${c.xu ?? 0}"></td>
+    <td class="g"><input class="num" type="number" min="0" value="${c.stars ?? 0}"></td>
+    <td class="g"><select><option value="">(không)</option><option>bien_dem</option><option>rung_tre</option><option>gach_nung</option><option>tet</option></select></td>
+    <td class="d"><input class="num" type="number" min="1" max="90" value="${c.percent ?? 20}"></td>
+    <td class="d"><input value="${c.offer || ""}" placeholder="kol01"></td>
+    <td class="d"><input value="${(c.products || []).join(", ")}" placeholder="trống = mọi sản phẩm"></td>
+    <td><input type="datetime-local" min="2020-01-01T00:00" max="2099-12-31T23:59" value="${toInput(c.start)}"></td>
+    <td><input type="datetime-local" min="2020-01-01T00:00" max="2099-12-31T23:59" value="${toInput(c.end)}"></td>
+    <td><button class="del">Xóa</button></td>`;
+  const sel = tr.querySelectorAll("select");
+  sel[0].value = c.kind || "gift";
+  sel[1].value = c.theme || "";
+  const sync = () => {
+    const gift = sel[0].value === "gift";
+    tr.querySelectorAll("td.g").forEach(td => td.classList.toggle("dim", !gift));
+    tr.querySelectorAll("td.d").forEach(td => td.classList.toggle("dim", gift));
+  };
+  sel[0].addEventListener("change", sync);
+  tr.querySelector(".del").addEventListener("click", () => tr.remove());
+  rows.appendChild(tr);
+  sync();
+}
+function read() {
+  return [...rows.children].map(tr => {
+    const i = tr.querySelectorAll("input"), s = tr.querySelectorAll("select");
+    const c = { code: i[0].value.trim(), kind: s[0].value, start: fromInput(i[6].value), end: fromInput(i[7].value) };
+    if (c.kind === "gift") { c.xu = +i[1].value || 0; c.stars = +i[2].value || 0; if (s[1].value) c.theme = s[1].value; }
+    else { c.percent = +i[3].value || 20; c.offer = i[4].value.trim(); c.products = i[5].value.split(",").map(x => x.trim()).filter(Boolean); }
+    return c;
+  });
+}
+function show(codes) { rows.innerHTML = ""; codes.forEach(addRow); }
+function validate(codes) {
+  const seen = new Set();
+  for (const c of codes) {
+    const n = normalize(c.code);
+    if (!n || n !== c.code.toUpperCase().replace(/[\s-]/g, "")) throw `Mã "${c.code}" chỉ được có chữ A-Z, số, dấu cách hoặc gạch ngang.`;
+    if (seen.has(n)) throw `Mã ${n} bị trùng.`;
+    seen.add(n);
+    for (const [label, t] of [["bắt đầu", c.start], ["kết thúc", c.end]]) {
+      if (!t) continue;
+      const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(t);
+      if (!m || +m[1] < 2020 || +m[1] > 2099 || +m[2] < 1 || +m[2] > 12 || +m[3] < 1 || +m[3] > 31 || +m[4] > 23 || +m[5] > 59)
+        throw `Mã ${n}: giờ ${label} "${t}" không hợp lệ (năm 2020–2099, đủ giờ và phút).`;
+    }
+    if (c.start && c.end && c.end < c.start) throw `Mã ${n}: giờ kết thúc trước giờ bắt đầu.`;
+    if (c.kind === "discount" && (c.percent < 1 || c.percent > 90)) throw `Mã ${n}: % giảm phải từ 1 đến 90.`;
+  }
+}
+async function buildCodesFile(codes, secretHex) {
+  const entries = [];
+  for (const c of codes) {
+    const e = { h: await sha256(SALT + normalize(c.code)), kind: c.kind };
+    if (c.start) e.start = c.start;
+    if (c.end) e.end = c.end;
+    if (c.kind === "gift") { e.xu = c.xu; e.stars = c.stars; if (c.theme) e.theme = c.theme; }
+    else { e.percent = c.percent; if (c.offer) e.offer = c.offer; e.products = c.products; }
+    entries.push(e);
+  }
+  const payload = JSON.stringify({ version: 1, codes: entries });
+  return JSON.stringify({ payload, sig: await hmac(secretHex, payload) }) + "\n";
+}
+
+// ---------- luồng chính ----------
+async function connect() {
+  const btn = $("btnConnect");
+  if (!$("token").value.trim()) { say("msgConnect", "Hãy nhập token GitHub.", false); return; }
+  if (!$("pass").value) { say("msgConnect", "Hãy nhập mật khẩu két.", false); return; }
+  btn.disabled = true;
+  say("msgConnect", "Đang kết nối...", true);
+  try {
+    try { if ($("remember").checked) localStorage.setItem("doandi-token", $("token").value.trim()); else localStorage.removeItem("doandi-token"); } catch (e) {}
+    const vault = await ghGet("codes.vault.json");
+    const codesFile = await ghGet("codes.json");
+    if (!vault) {
+      state = { secret: null, codes: [], sha: { codes: codesFile && codesFile.sha, vault: null } };
+      $("setup").classList.remove("hidden");
+      say("msgConnect", "Kết nối được, nhưng repo chưa có két. Tạo két ở bên dưới.", true);
+      return;
+    }
+    let plain;
+    try { plain = await decryptVault(JSON.parse(vault.text), $("pass").value); }
+    catch (e) { throw "Sai mật khẩu két."; }
+    state = { secret: plain.secret, codes: plain.codes || [], sha: { codes: codesFile && codesFile.sha, vault: vault.sha } };
+    show(state.codes);
+    $("setup").classList.add("hidden");
+    $("editor").classList.remove("hidden");
+    $("password").classList.remove("hidden");
+    say("msgConnect", `Đã mở két: ${state.codes.length} mã.`, true);
+  } catch (e) { say("msgConnect", String(e), false); }
+  finally { btn.disabled = false; }
+}
+
+async function createVault() {
+  const secret = $("secret").value.trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(secret)) { say("msgSetup", "Khóa ký phải đúng 64 ký tự 0-9, a-f.", false); return; }
+  if ($("pass").value.length < 12) { say("msgSetup", "Mật khẩu két cần ít nhất 12 ký tự.", false); return; }
+  if ($("pass").value !== $("pass2").value) { say("msgSetup", "Hai lần nhập mật khẩu không giống nhau.", false); return; }
+  state.secret = secret;
+  state.codes = [];
+  show([]);
+  $("setup").classList.add("hidden");
+  $("editor").classList.remove("hidden");
+  $("password").classList.remove("hidden");
+  say("msgEditor", "Két mới chưa lưu. Thêm mã (hoặc Nạp file danh sách) rồi bấm Lưu lên GitHub.", true);
+}
+
+async function save(password) {
+  const btn = $("btnSave");
+  const codes = read();
+  try { validate(codes); } catch (e) { say("msgEditor", e, false); return false; }
+  btn.disabled = true;
+  say("msgEditor", "Đang lưu lên GitHub...", true);
+  try {
+    const stamp = new Date().toLocaleString("vi-VN");
+    state.sha.codes = await ghPut("codes.json", await buildCodesFile(codes, state.secret), state.sha.codes, "Cập nhật mã " + stamp);
+    const vault = await encryptVault({ secret: state.secret, codes }, password || $("pass").value);
+    state.sha.vault = await ghPut("codes.vault.json", JSON.stringify(vault) + "\n", state.sha.vault, "Cập nhật két mã " + stamp);
+    state.codes = codes;
+    say("msgEditor", `Đã lưu ${codes.length} mã lúc ${stamp}. Game dùng mã mới trong khoảng 1 phút.`, true);
+    return true;
+  } catch (e) { say("msgEditor", String(e), false); return false; }
+  finally { btn.disabled = false; }
+}
+
+function download(name, text) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+$("btnConnect").onclick = connect;
+$("pass").addEventListener("keydown", e => { if (e.key === "Enter") connect(); });
+$("btnCreate").onclick = createVault;
+$("addGift").onclick = () => addRow({ kind: "gift" });
+$("addDiscount").onclick = () => addRow({ kind: "discount", percent: 20 });
+$("btnSave").onclick = () => save();
+$("btnReload").onclick = connect;
+$("btnExport").onclick = () => { download("codes.src.json", JSON.stringify({ codes: read() }, null, 2) + "\n"); say("msgEditor", "Đã tải bản sao danh sách mã thật. Cất ở chỗ riêng tư.", true); };
+$("btnImport").onclick = () => $("file").click();
+$("file").onchange = async ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  try { const d = JSON.parse(await f.text()); show(d.codes || []); say("msgEditor", `Đã nạp ${(d.codes || []).length} mã (chưa lưu).`, true); }
+  catch (e) { say("msgEditor", "File không đọc được: " + e, false); }
+  ev.target.value = "";
+};
+$("btnPass").onclick = async () => {
+  const p = $("newPass").value;
+  if (p.length < 12) { say("msgPass", "Mật khẩu mới cần ít nhất 12 ký tự.", false); return; }
+  if (p !== $("newPass2").value) { say("msgPass", "Hai lần nhập không giống nhau.", false); return; }
+  if (await save(p)) { $("pass").value = p; $("newPass").value = $("newPass2").value = ""; say("msgPass", "Đã đổi mật khẩu két.", true); }
+  else say("msgPass", "Chưa đổi được, xem lỗi ở phần danh sách mã.", false);
+};
+try { const t = localStorage.getItem("doandi-token"); if (t) { $("token").value = t; $("remember").checked = true; } } catch (e) {}
+if (!window.crypto || !window.crypto.subtle) say("msgConnect", "Trình duyệt này không hỗ trợ mã hóa. Hãy mở trang qua https (ntstm.github.io/quanly.html) bằng Chrome hoặc Edge.", false);
+window.__test = { normalize, sha256, hmac, encryptVault, decryptVault, buildCodesFile, validate, SALT };
+</script>
+</body>
+</html>
